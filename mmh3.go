@@ -35,7 +35,7 @@ func Hash32 (key []byte) uint32 {
   case 1:
     k ^= uint32(key[tailIndex])
     k *= c1
-    k = (k << 13) | (k >> (32 - 15))
+    k = (k << 15) | (k >> (32 - 15))
     k *= c2
     h ^= k
   }
