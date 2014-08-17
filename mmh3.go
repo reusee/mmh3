@@ -5,6 +5,11 @@ import (
 	"encoding/binary"
 )
 
+var (
+	Hash32x86  = Hash32
+	Hash128x86 = Hash128
+)
+
 func Hash32(key []byte) uint32 {
 	length := len(key)
 	if length == 0 {
