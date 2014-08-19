@@ -1,13 +1,13 @@
 package mmh3
 
 import (
-	"bytes"
-	"encoding/binary"
+	"reflect"
+	"unsafe"
 )
 
 var (
 	Hash32x86  = Hash32
-	Hash128x86 = Hash128
+	Hash128x64 = Hash128
 )
 
 func Hash32(key []byte) uint32 {
@@ -18,9 +18,14 @@ func Hash32(key []byte) uint32 {
 	var c1, c2 uint32 = 0xcc9e2d51, 0x1b873593
 	nblocks := length / 4
 	var h, k uint32
-	buf := bytes.NewBuffer(key)
+	var blocks []uint32
+	keyHeader := (*reflect.SliceHeader)(unsafe.Pointer(&key))
+	blocksHeader := (*reflect.SliceHeader)(unsafe.Pointer(&blocks))
+	blocksHeader.Data = keyHeader.Data
+	blocksHeader.Len = length
+	blocksHeader.Cap = length
 	for i := 0; i < nblocks; i++ {
-		binary.Read(buf, binary.LittleEndian, &k)
+		k = blocks[i] // assuming no endian swapping
 		k *= c1
 		k = (k << 15) | (k >> (32 - 15))
 		k *= c2
@@ -55,19 +60,22 @@ func Hash32(key []byte) uint32 {
 
 func Hash128(key []byte) []byte {
 	length := len(key)
-	ret := new(bytes.Buffer)
+	ret := make([]byte, 16)
 	if length == 0 {
-		binary.Write(ret, binary.LittleEndian, uint64(0))
-		binary.Write(ret, binary.LittleEndian, uint64(0))
-		return ret.Bytes()
+		return ret
 	}
 	var c1, c2 uint64 = 0x87c37b91114253d5, 0x4cf5ad432745937f
 	nblocks := length / 16
 	var h1, h2, k1, k2 uint64
-	buf := bytes.NewBuffer(key)
-	for i := 0; i < nblocks; i++ {
-		binary.Read(buf, binary.LittleEndian, &k1)
-		binary.Read(buf, binary.LittleEndian, &k2)
+	var uint64s []uint64
+	keyHeader := (*reflect.SliceHeader)(unsafe.Pointer(&key))
+	uint64sHeader := (*reflect.SliceHeader)(unsafe.Pointer(&uint64s))
+	uint64sHeader.Data = keyHeader.Data
+	uint64sHeader.Len = nblocks * 2
+	uint64sHeader.Cap = uint64sHeader.Len
+	for i := 0; i < nblocks*2; i += 2 {
+		k1 = uint64s[i] // assuming no endian swapping
+		k2 = uint64s[i+1]
 		k1 *= c1
 		k1 = (k1 << 31) | (k1 >> (64 - 31))
 		k1 *= c2
@@ -155,7 +163,13 @@ func Hash128(key []byte) []byte {
 	h2 ^= h2 >> 33
 	h1 += h2
 	h2 += h1
-	binary.Write(ret, binary.LittleEndian, h1)
-	binary.Write(ret, binary.LittleEndian, h2)
-	return ret.Bytes()
+	retHeader := (*reflect.SliceHeader)(unsafe.Pointer(&ret))
+	var tuple []uint64
+	tupleHeader := (*reflect.SliceHeader)(unsafe.Pointer(&tuple))
+	tupleHeader.Data = retHeader.Data
+	tupleHeader.Len = 2
+	tupleHeader.Cap = 2
+	tuple[0] = h1
+	tuple[1] = h2
+	return ret
 }
