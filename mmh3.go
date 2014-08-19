@@ -22,8 +22,8 @@ func Hash32(key []byte) uint32 {
 	keyHeader := (*reflect.SliceHeader)(unsafe.Pointer(&key))
 	blocksHeader := (*reflect.SliceHeader)(unsafe.Pointer(&blocks))
 	blocksHeader.Data = keyHeader.Data
-	blocksHeader.Len = length
-	blocksHeader.Cap = length
+	blocksHeader.Len = nblocks
+	blocksHeader.Cap = nblocks
 	for i := 0; i < nblocks; i++ {
 		k = blocks[i] // assuming no endian swapping
 		k *= c1
