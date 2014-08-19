@@ -1,6 +1,7 @@
 package mmh3
 
 import (
+	"bytes"
 	"crypto/rand"
 	"io"
 	mt "math/rand"
@@ -49,4 +50,17 @@ func TestHash32(t *testing.T) {
 	h.Reset()
 	h.Write([]byte{'f', 'o'})
 	h.Sum(nil)
+}
+
+func BenchmarkH32(b *testing.B) {
+	h := New32()
+	s := bytes.Repeat([]byte("o"), 1024)
+	b.SetBytes(int64(len(s)))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		h.Reset()
+		h.Write(s)
+		h.Sum(nil)
+	}
 }

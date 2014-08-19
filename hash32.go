@@ -37,6 +37,7 @@ func (h *hash32) Size() int {
 
 func (h *hash32) Sum(in []byte) []byte {
 	var k uint32
+	hh := h.hash
 	if h.tail != nil {
 		switch len(h.tail) {
 		case 3:
@@ -50,16 +51,17 @@ func (h *hash32) Sum(in []byte) []byte {
 			k *= c1_32
 			k = (k << 15) | (k >> (32 - 15))
 			k *= c2_32
-			h.hash ^= k
+			hh ^= k
 		}
 	}
-	h.hash ^= h.size
-	h.hash ^= h.hash >> 16
-	h.hash *= 0x85ebca6b
-	h.hash ^= h.hash >> 13
-	h.hash *= 0xc2b2ae35
-	h.hash ^= h.hash >> 16
-	return append(in, byte(h.hash), byte(h.hash>>8), byte(h.hash>>16), byte(h.hash>>24))
+	hh ^= h.size
+	hh ^= hh >> 16
+	hh *= 0x85ebca6b
+	hh ^= hh >> 13
+	hh *= 0xc2b2ae35
+	hh ^= hh >> 16
+	h.hash = hh
+	return append(in, byte(hh), byte(hh>>8), byte(hh>>16), byte(hh>>24))
 }
 
 func (h *hash32) Sum32() uint32 {
@@ -70,6 +72,7 @@ func (h *hash32) Sum32() uint32 {
 func (h *hash32) Write(key []byte) (n int, err error) {
 	n = len(key)
 	h.size += uint32(n)
+	hh := h.hash
 
 	if h.tail != nil {
 		for len(key) > 0 && len(h.tail) < 4 {
@@ -77,10 +80,13 @@ func (h *hash32) Write(key []byte) (n int, err error) {
 			key = key[1:]
 		}
 		if len(h.tail) == 4 { // a full block
-			h.sumBlock(uint32(h.tail[0]) +
-				uint32(h.tail[1])<<8 +
-				uint32(h.tail[2])<<16 +
-				uint32(h.tail[3])<<24)
+			k := uint32(h.tail[0]) + uint32(h.tail[1])<<8 + uint32(h.tail[2])<<16 + uint32(h.tail[3])<<24
+			k *= c1_32
+			k = (k << 15) | (k >> (32 - 15))
+			k *= c2_32
+			hh ^= k
+			hh = (hh << 13) | (hh >> (32 - 13))
+			hh = (hh * 5) + 0xe6546b64
 			h.tail = nil
 		}
 	}
@@ -95,7 +101,12 @@ func (h *hash32) Write(key []byte) (n int, err error) {
 		blocksHeader.Len = nblocks
 		blocksHeader.Cap = nblocks
 		for _, k := range blocks {
-			h.sumBlock(k)
+			k *= c1_32
+			k = (k << 15) | (k >> (32 - 15))
+			k *= c2_32
+			hh ^= k
+			hh = (hh << 13) | (hh >> (32 - 13))
+			hh = (hh * 5) + 0xe6546b64
 		}
 	}
 
@@ -103,14 +114,6 @@ func (h *hash32) Write(key []byte) (n int, err error) {
 		h.tail = key[nblocks*4 : length]
 	}
 
+	h.hash = hh
 	return
-}
-
-func (h *hash32) sumBlock(k uint32) {
-	k *= c1_32
-	k = (k << 15) | (k >> (32 - 15))
-	k *= c2_32
-	h.hash ^= k
-	h.hash = (h.hash << 13) | (h.hash >> (32 - 13))
-	h.hash = (h.hash * 5) + 0xe6546b64
 }
