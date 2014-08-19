@@ -33,6 +33,7 @@ func Hash32(key []byte) uint32 {
 		h = (h << 13) | (h >> (32 - 13))
 		h = (h * 5) + 0xe6546b64
 	}
+
 	k = 0
 	tailIndex := nblocks * 4
 	switch length & 3 {
@@ -91,6 +92,7 @@ func Hash128(key []byte) []byte {
 		h2 += h1
 		h2 = h2*5 + 0x38495ab5
 	}
+
 	k1, k2 = 0, 0
 	tailIndex := nblocks * 16
 	switch length & 15 {
@@ -147,6 +149,7 @@ func Hash128(key []byte) []byte {
 		k1 *= c2
 		h1 ^= k1
 	}
+
 	h1 ^= uint64(length)
 	h2 ^= uint64(length)
 	h1 += h2
@@ -163,6 +166,7 @@ func Hash128(key []byte) []byte {
 	h2 ^= h2 >> 33
 	h1 += h2
 	h2 += h1
+
 	retHeader := (*reflect.SliceHeader)(unsafe.Pointer(&ret))
 	var tuple []uint64
 	tupleHeader := (*reflect.SliceHeader)(unsafe.Pointer(&tuple))
