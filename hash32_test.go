@@ -1,7 +1,6 @@
 package mmh3
 
 import (
-	"bytes"
 	"crypto/rand"
 	"io"
 	mt "math/rand"
@@ -52,15 +51,27 @@ func TestHash32(t *testing.T) {
 	h.Sum(nil)
 }
 
-func BenchmarkH32(b *testing.B) {
-	h := New32()
-	s := bytes.Repeat([]byte("o"), 1024)
-	b.SetBytes(int64(len(s)))
-
+func bench32(b *testing.B, bytes int) {
+	bs := make([]byte, bytes)
+	io.ReadFull(rand.Reader, bs)
+	b.SetBytes(int64(bytes))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		h.Reset()
-		h.Write(s)
-		h.Sum(nil)
+		Sum32(bs)
 	}
 }
+
+func BenchmarkHash32_1(b *testing.B)    { bench32(b, 1) }
+func BenchmarkHash32_2(b *testing.B)    { bench32(b, 2) }
+func BenchmarkHash32_4(b *testing.B)    { bench32(b, 4) }
+func BenchmarkHash32_8(b *testing.B)    { bench32(b, 8) }
+func BenchmarkHash32_16(b *testing.B)   { bench32(b, 16) }
+func BenchmarkHash32_32(b *testing.B)   { bench32(b, 32) }
+func BenchmarkHash32_64(b *testing.B)   { bench32(b, 64) }
+func BenchmarkHash32_128(b *testing.B)  { bench32(b, 128) }
+func BenchmarkHash32_256(b *testing.B)  { bench32(b, 256) }
+func BenchmarkHash32_512(b *testing.B)  { bench32(b, 512) }
+func BenchmarkHash32_1024(b *testing.B) { bench32(b, 1024) }
+func BenchmarkHash32_2048(b *testing.B) { bench32(b, 2048) }
+func BenchmarkHash32_4096(b *testing.B) { bench32(b, 4096) }
+func BenchmarkHash32_8192(b *testing.B) { bench32(b, 8192) }

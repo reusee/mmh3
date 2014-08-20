@@ -53,15 +53,27 @@ func TestHash128(t *testing.T) {
 	}
 }
 
-func BenchmarkH128(b *testing.B) {
-	h := New128()
-	s := bytes.Repeat([]byte("o"), 1024)
-	b.SetBytes(int64(len(s)))
-
+func bench128(b *testing.B, bytes int) {
+	bs := make([]byte, bytes)
+	io.ReadFull(rand.Reader, bs)
+	b.SetBytes(int64(bytes))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		h.Reset()
-		h.Write(s)
-		h.Sum(nil)
+		Sum128(bs)
 	}
 }
+
+func BenchmarkHash128_1(b *testing.B)    { bench128(b, 1) }
+func BenchmarkHash128_2(b *testing.B)    { bench128(b, 2) }
+func BenchmarkHash128_4(b *testing.B)    { bench128(b, 4) }
+func BenchmarkHash128_8(b *testing.B)    { bench128(b, 8) }
+func BenchmarkHash128_16(b *testing.B)   { bench128(b, 16) }
+func BenchmarkHash128_32(b *testing.B)   { bench128(b, 32) }
+func BenchmarkHash128_64(b *testing.B)   { bench128(b, 64) }
+func BenchmarkHash128_128(b *testing.B)  { bench128(b, 128) }
+func BenchmarkHash128_256(b *testing.B)  { bench128(b, 256) }
+func BenchmarkHash128_512(b *testing.B)  { bench128(b, 512) }
+func BenchmarkHash128_1024(b *testing.B) { bench128(b, 1024) }
+func BenchmarkHash128_2048(b *testing.B) { bench128(b, 2048) }
+func BenchmarkHash128_4096(b *testing.B) { bench128(b, 4096) }
+func BenchmarkHash128_8192(b *testing.B) { bench128(b, 8192) }
