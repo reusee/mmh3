@@ -172,16 +172,15 @@ func (h *hash128) Write(key []byte) (n int, err error) {
 	length := len(key)
 	nblocks := length / 16
 	if nblocks > 0 {
-		var uint64s []uint64
 		var k1, k2 uint64
+		var blocks [][2]uint64
 		keyHeader := (*reflect.SliceHeader)(unsafe.Pointer(&key))
-		uint64sHeader := (*reflect.SliceHeader)(unsafe.Pointer(&uint64s))
-		uint64sHeader.Data = keyHeader.Data
-		uint64sHeader.Len = nblocks * 2
-		uint64sHeader.Cap = uint64sHeader.Len
-		for i := 0; i < nblocks*2; i += 2 {
-			k1 = uint64s[i] // assuming no endian swapping
-			k2 = uint64s[i+1]
+		blocksHeader := (*reflect.SliceHeader)(unsafe.Pointer(&blocks))
+		blocksHeader.Data = keyHeader.Data
+		blocksHeader.Len = nblocks
+		blocksHeader.Cap = nblocks
+		for _, b := range blocks {
+			k1, k2 = b[0], b[1]
 			k1 *= c1_64
 			k1 = (k1 << 31) | (k1 >> (64 - 31))
 			k1 *= c2_64
