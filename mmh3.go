@@ -1,5 +1,7 @@
 package mmh3
 
+import "sync"
+
 var (
 	Hash32x86  = Sum32
 	Hash128x64 = Sum128
@@ -9,14 +11,34 @@ var (
 	Hash128 = Sum128
 )
 
-func Sum32(key []byte) uint32 {
-	h := New32()
+var (
+	pool128 = sync.Pool{
+		New: func() interface{} {
+			return New128()
+		},
+	}
+
+	pool32 = sync.Pool{
+		New: func() interface{} {
+			return New32()
+		},
+	}
+)
+
+func Sum32(key []byte) (ret uint32) {
+	h := pool32.Get().(*hash32)
 	h.Write(key)
-	return h.Sum32()
+	ret = h.Sum32()
+	h.Reset()
+	pool32.Put(h)
+	return
 }
 
-func Sum128(key []byte) []byte {
-	h := New128()
+func Sum128(key []byte) (ret []byte) {
+	h := pool128.Get().(*hash128)
 	h.Write(key)
-	return h.Sum(nil)
+	ret = h.Sum(nil)
+	h.Reset()
+	pool128.Put(h)
+	return
 }
