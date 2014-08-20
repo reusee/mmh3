@@ -1,6 +1,4 @@
 mmh3
 ====
 
-MurmurHash 3 for golang
-
-hash.Hash32 and 128bit hash.Hash interface is also implemented.
+MurmurHash 3 implementation of hash.Hash interface
