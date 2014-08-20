@@ -61,6 +61,9 @@ func (h *hash32) Sum(in []byte) []byte {
 	hh *= 0xc2b2ae35
 	hh ^= hh >> 16
 	h.hash = hh
+	if in == nil {
+		return []byte{byte(hh), byte(hh >> 8), byte(hh >> 16), byte(hh >> 24)}
+	}
 	return append(in, byte(hh), byte(hh>>8), byte(hh>>16), byte(hh>>24))
 }
 

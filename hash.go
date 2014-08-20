@@ -131,6 +131,10 @@ func (h *hash128) Sum(in []byte) []byte {
 	tupleHeader.Cap = 2
 	tuple[0] = h1
 	tuple[1] = h2
+
+	if in == nil {
+		return ret
+	}
 	return append(in, ret...)
 
 }
@@ -142,10 +146,12 @@ func (h *hash128) Write(key []byte) (n int, err error) {
 	h2 := h.h2
 
 	if h.tail != nil {
-		for len(key) > 0 && len(h.tail) < 16 {
-			h.tail = append(h.tail, key[0])
-			key = key[1:]
+		n := 16 - len(h.tail)
+		if n > len(key) {
+			n = len(key)
 		}
+		h.tail = append(h.tail, key[:n]...)
+		key = key[n:]
 		if len(h.tail) == 16 { // a full block
 			var k1, k2 uint64
 			r := bytes.NewReader(h.tail)
