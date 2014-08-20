@@ -2,36 +2,52 @@ package mmh3
 
 import (
 	"crypto/rand"
+	"fmt"
 	"io"
-	mt "math/rand"
 	"testing"
-	"time"
 )
 
 func TestHash32(t *testing.T) {
 	h := New32()
-	io.WriteString(h, "h")
-	io.WriteString(h, "e")
-	io.WriteString(h, "l")
-	io.WriteString(h, "l")
-	io.WriteString(h, "o")
-	if h.Sum32() != Hash32([]byte("hello")) {
-		t.Fatal()
-	}
 
-	h.Reset()
-	io.WriteString(h, "hello")
-	if h.Sum32() != Hash32([]byte("hello")) {
-		t.Fatal()
+	cases := map[string]string{
+		"":            "00000000",
+		"hello":       "47fa8b24",
+		"foobar":      "bdd4c4a4",
+		"ooooooo":     "cc77ff34",
+		"我能吞下玻璃而不伤身体": "841a69c4",
 	}
-
-	mt.Seed(time.Now().UnixNano())
-	for i := 0; i < 1024; i++ {
-		s := make([]byte, mt.Intn(2048))
-		io.ReadFull(rand.Reader, s)
+	for key, hex := range cases {
+		h.Write([]byte(key))
+		if fmt.Sprintf("%x", h.Sum(nil)) != hex {
+			t.Fatal()
+		}
 		h.Reset()
-		h.Write(s)
-		if h.Sum32() != Hash32(s) {
+
+		for _, c := range key {
+			h.Write([]byte(string(c)))
+		}
+		if fmt.Sprintf("%x", h.Sum(nil)) != hex {
+			t.Fatal()
+		}
+		h.Reset()
+	}
+
+	cases2 := map[string]uint32{
+		"":            0,
+		"hello":       613153351,
+		"foobar":      2764362941,
+		"ooooooo":     889157580,
+		"我能吞下玻璃而不伤身体": 3295222404,
+	}
+	for key, hash := range cases2 {
+		h.Write([]byte(key))
+		if h.Sum32() != hash {
+			t.Fatal()
+		}
+		h.Reset()
+
+		if Sum32([]byte(key)) != hash {
 			t.Fatal()
 		}
 	}
@@ -43,12 +59,7 @@ func TestHash32(t *testing.T) {
 	if h.Size() != 4 {
 		t.Fatal()
 	}
-	h.Reset()
-	h.Write([]byte{'f', 'o', 'o'})
-	h.Sum(nil)
-	h.Reset()
-	h.Write([]byte{'f', 'o'})
-	h.Sum(nil)
+	h.Sum([]byte{'o'})
 }
 
 func bench32(b *testing.B, bytes int) {

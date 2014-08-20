@@ -1,45 +1,38 @@
 package mmh3
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/hex"
+	"fmt"
 	"io"
-	mt "math/rand"
 	"testing"
-	"time"
 )
 
 func TestHash128(t *testing.T) {
 	h := New128()
-	s := []byte("我能吞下玻璃而不伤身体")
-	h.Write(s)
-	if string(h.Sum(nil)) != string(Hash128(s)) {
-		t.Fatal()
-	}
 
-	s, _ = hex.DecodeString(testString)
-	h.Reset()
-	h.Write(s)
-	if string(h.Sum(nil)) != string(Hash128(s)) {
-		t.Fatal()
+	cases := map[string]string{
+		"":                "00000000000000000000000000000000",
+		"hello":           "029bbd41b3a7d8cb191dae486a901e5b",
+		"foobar":          "455ac81671aed2bdafd6f8bae055a274",
+		"ooooooooooooooo": "a9bd51f7e15176d22148141c49ea8fa5",
+		"我能吞下玻璃而不伤身体":     "2ea7aa45a1a1e43d44afaa81c30d1a37",
 	}
-
-	h.Reset()
-	for i := 0; i < 37; i++ {
-		io.WriteString(h, "o")
-	}
-	if string(h.Sum(nil)) != string(Hash128(bytes.Repeat([]byte{'o'}, 37))) {
-		t.Fatal()
-	}
-
-	mt.Seed(time.Now().UnixNano())
-	for i := 0; i < 1024; i++ {
-		s := make([]byte, mt.Intn(2048))
-		io.ReadFull(rand.Reader, s)
+	for key, hex := range cases {
+		h.Write([]byte(key))
+		if fmt.Sprintf("%x", h.Sum(nil)) != hex {
+			t.Fatal()
+		}
 		h.Reset()
-		h.Write(s)
-		if string(h.Sum(nil)) != string(Hash128(s)) {
+
+		for _, c := range key {
+			h.Write([]byte(string(c)))
+		}
+		if fmt.Sprintf("%x", h.Sum(nil)) != hex {
+			t.Fatal()
+		}
+		h.Reset()
+
+		if fmt.Sprintf("%x", Sum128([]byte(key))) != hex {
 			t.Fatal()
 		}
 	}
@@ -51,6 +44,7 @@ func TestHash128(t *testing.T) {
 	if h.Size() != 16 {
 		t.Fatal()
 	}
+	h.Sum([]byte{'o'})
 }
 
 func bench128(b *testing.B, bytes int) {
